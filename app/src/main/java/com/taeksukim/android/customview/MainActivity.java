@@ -6,6 +6,7 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.DisplayMetrics;
 import android.view.View;
 import android.widget.Button;
 import android.widget.FrameLayout;
@@ -14,12 +15,32 @@ import android.widget.RelativeLayout;
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
     CustomView view;
-    int player_x = 0;
-    int player_y = 0;
-    int player_size = 50;
 
     //이동단위
-    int unit = 50;
+    int unit = 0;
+
+    //플레이어 정보
+    int player_x = 0;
+    int player_y = 0;
+    int player_radius = unit / 2;
+
+    private static final int GROUND_SIZE=10;
+
+    final int map[][] = {
+            {0,0,0,0,0,0,0,0,0,0},
+            {0,0,0,0,0,0,0,0,0,0},
+            {0,0,0,0,0,0,0,0,0,0},
+            {0,0,0,0,0,0,0,0,0,0},
+            {0,0,0,0,0,0,0,0,0,0},
+            {0,0,0,0,0,0,1,0,0,0},
+            {0,0,0,0,0,0,0,0,0,0},
+            {0,0,0,0,0,0,0,0,0,0},
+            {0,0,0,0,0,0,0,0,0,0},
+            {0,0,0,0,0,0,0,0,0,0},
+
+    };
+
+
 
     Button btnUp, btnDown, btnRight, btnLeft;
     FrameLayout ground;
@@ -29,6 +50,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        DisplayMetrics metrics = getResources().getDisplayMetrics();
+        unit = metrics.widthPixels / GROUND_SIZE;
+
+
+        init();
+
 
         btnUp = (Button) findViewById(R.id.btnUp);
         btnDown = (Button) findViewById(R.id.btnDown);
@@ -45,30 +73,67 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         view = new CustomView(this);
         ground.addView(view);
+
+    }
+
+    private void init(){
+        DisplayMetrics metrics = getResources().getDisplayMetrics();
+        unit = metrics.widthPixels / GROUND_SIZE;
+        player_radius = unit/2;
+
+        player_x = 0;
+        player_y = 0;
     }
 
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.btnUp:
-                player_y = player_y - unit;
+                if(player_y > 0 && !collisionCheck("up"))
+                player_y = player_y - 1;
                 break;
 
             case R.id.btnDown:
-                player_y = player_y + unit;
+                if(player_y < GROUND_SIZE-1 && !collisionCheck("down"))
+                player_y = player_y + 1;
                 break;
 
             case R.id.btnLeft:
-                player_x = player_x - unit;
+                if(player_x > 0 && !collisionCheck("left"))
+                player_x = player_x - 1;
                 break;
 
             case R.id.btnRight:
-                player_x = player_x + unit;
+                if(player_x < GROUND_SIZE-1 && !collisionCheck("right"))
+                player_x = player_x + 1;
                 break;
 
         }
         //화면을 다시 그려주는 함수 -> 화면을 지운 후에 onDraw를 호출해준다.
         view.invalidate();
+    }
+
+    private boolean collisionCheck(String direction){
+        if(direction.equals("up")){
+            if(map[player_y-1][player_x] == 1){
+                return true;
+            }
+        }else if(direction.equals("down")){
+            if(map[player_y+1][player_x] == 1){
+                return true;
+            }
+        }else if(direction.equals("left")){
+            if(map[player_y][player_x-1] == 1){
+                return true;
+            }
+        }else if(direction.equals("right")){
+            if(map[player_y][player_x+1] == 1){
+                return true;
+            }
+        }
+
+
+        return false;
     }
 
 
@@ -86,14 +151,36 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             //1. 색상을 정의
             //Paint paint = new Paint();
             //paint.setColor(Color.CYAN);
-
-            Paint paint2 = new Paint();
-            paint2.setColor(Color.MAGENTA);
+            Paint gray = new Paint();
+            gray.setColor(Color.GRAY);
+            Paint magenta = new Paint();
+            magenta.setColor(Color.MAGENTA);
             //2. canvas에 그림 그리기
             //canvas.drawRect(100,100,200,200,paint);
             //canvas.drawCircle(500,500,100,paint2);
 
-            canvas.drawCircle(player_x, player_y, player_size, paint2);
+
+            // 화면에 맵을 그린다.
+            for(int i =0; i<map.length; i++){
+                for(int j = 0; j <map[0].length; j++){
+                    if(map[i][j] != 0) {
+                        canvas.drawRect(
+                                unit*j, // 왼쪽 위 x
+                                unit*i, // 왼쪽 위 y
+                                unit*j + unit, // 오른쪽 아래 x
+                                unit*i + unit, // 오른쪽 아래 y
+                                gray // BLACK
+
+                        );
+                    }
+                }
+            }
+
+            // 플레이어를 화면에 그린다
+            canvas.drawCircle(
+                    player_x * unit + player_radius,
+                    player_y * unit + player_radius,
+                    player_radius, magenta );
         }
     }
 }
